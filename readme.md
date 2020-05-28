@@ -1,3 +1,11 @@
+# Prereqs Software
+- https://www.balena.io/etcher/
+  
+# Prereqs Hardware
+- 3 x Raspberry Pi 4
+  - SD cards (I used 32GB, I'm sure 16GB would work too)
+  - 
+
 # Basic Setup 
 
 - Flash Raspbian Buster Lite
