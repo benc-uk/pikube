@@ -1,0 +1,52 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nodeapp
+  labels:
+    app: nodeapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nodeapp
+  template:
+    metadata:
+      labels:
+        app: nodeapp
+    spec:
+      containers:
+      - name: app
+        image: bencuk/nodejs-demoapp:arm
+        ports:
+        - containerPort: 3000
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodeapp
+spec:
+  type: ClusterIP
+  selector:
+    app: nodeapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30001
+
+---
+
+# kind: Ingress
+# apiVersion: networking.k8s.io/v1beta1
+# metadata:
+#   name: nodeapp
+# spec:
+#   rules:
+#   - http:
+#       paths:
+#       - path: /
+#         backend:
+#           serviceName: nodeapp
+#           servicePort: 80
