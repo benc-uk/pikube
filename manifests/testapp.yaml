@@ -19,6 +19,13 @@ spec:
         image: bencuk/nodejs-demoapp:arm
         ports:
         - containerPort: 3000
+        resources:
+          limits:
+            cpu: 500m
+            memory: 50M
+          requests:
+            cpu: 100m
+            memory: 20M
 
 ---
 

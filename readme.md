@@ -159,7 +159,7 @@ Check you see the three pods start, go to `http://{IP_OF_A_NODE}:30001`
 Optionally validate you can ping from pod to pod by exec'ing into them, especially check pod-to-pod across nodes.
 
 
-# 5. Optional Cluster Tasks
+# 5. Optional Cluster Add-Ons
 
 ### Deploy NGINX Ingress Controller
 ```bash
@@ -181,6 +181,14 @@ kube proxy
 ```
 
 Access dashboard here [`http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/`](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/) and login with the token
+
+### Deploy Metric Server
+The default YAML on the [kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server) repo won't work with ARM and the Raspberry Pi
+
+Install the version in this repo instead
+```bash
+kubectl apply -f ./metric-server-arm/metrics-server.yaml
+```
 
 # Todo
 - Use MetalLB for LoadBalancer? https://metallb.universe.tf/
