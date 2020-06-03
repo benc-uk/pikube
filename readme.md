@@ -50,8 +50,14 @@ https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
 
 - Assign hostnames and **static** IPs
   - Hostname: `sudo nano /etc/hostname`
-  - edit `sudo nano /etc/dhcpcd.conf` (see etc/dhcpd-snippet.conf)
-
+  - edit `sudo nano /etc/dhcpcd.conf` 
+  I used wlan (which probably isn't great but it worked)
+    ```
+    interface wlan0
+    static ip_address=192.168.0.XXX/24
+    static routers=192.168.0.1
+    static domain_name_servers=192.168.0.1 8.8.8.8
+    ```
 
 # 2. Base Config
 Setup 
@@ -152,7 +158,7 @@ kubectl get po -n kube-system -l k8s-app=kube-dns
 ### Test with Demo App
 Deploy a test Node.js web app, this will create a NodePort service on port 30001
 ```bash
-kubectl apply -f manifests/testapp.yaml
+kubectl apply -f demos/testapp.yaml
 ```
 
 Check you see the three pods start, go to `http://{IP_OF_A_NODE}:30001`  
