@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-nfs-volume
+  namespace: mon
+  labels:
+    directory: grafana
+spec:
+  capacity:
+    storage: 500Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  nfs:
+    path: /grafana
+    # WHY IP?! We can't use the service DNS name as it's resolved from the host not the pods
+    # Change to: kubectl get svc -n storage nfs-server -o jsonpath='{.spec.clusterIP}'
+    server: 10.108.218.202
