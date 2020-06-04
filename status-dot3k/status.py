@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
+try:
+  import dot3k.backlight as backlight
+  import dot3k.lcd as lcd
+  import dot3k.joystick as joystick
+except:
+  print("!ERROR! Unable to detect Display-o-tron 3000, exiting now!")
+  exit()
+
 from kubernetes import client, config, utils
-import dot3k.backlight as backlight
-import dot3k.lcd as lcd
-import dot3k.joystick as joystick
 import time, json, math
 from threading import Timer
 
@@ -14,33 +19,42 @@ def switchMode(new_mode):
   global mode, backlight_timer, deploy_index
   lcd.clear()
   
+  # Reset deploy_index if mode changes
   if new_mode != mode:
     deploy_index = -1
 
   mode = new_mode
   
   # Turn off backlight & screen after 10 seconds
+  # If user presses joystick while still in same mode it resets the timeout (keep screen on)
+  screen_on = True
   if backlight_timer != None:
     backlight_timer.cancel()
   backlight_timer = Timer(15, screenOff)
   backlight_timer.start() 
 
+  # Up mode = showKubeCounts
   if mode == joystick.UP:
     backlight.hue(0.4)
+    # Static information for this mode
     lcd.write(f"Nodes:      /   ")
     lcd.write(f"Pods:       /   ")
     lcd.write(f"Deploy:     /   ")
     showKubeCounts()
 
+  # Left mode = showNodeMetrics
   if mode == joystick.LEFT:
     backlight.hue(0.1)
     printNodes()
     showNodeMetrics()
 
+  # Down mode = showKubeDeploys
   if mode == joystick.DOWN:
+    # Special case; allows scrolling through deployments by pushing down repeatedly
     deploy_index = deploy_index + 1
     if deploy_index >= deploy_max:
-      deploy_index = 0    
+      deploy_index = 0  
+  
     backlight.hue(0.7)
     showKubeDeploys()   
 
@@ -48,13 +62,16 @@ def switchMode(new_mode):
 # Clear display and turn off light
 #
 def screenOff():
-  backlight.off
+  global screen_on
+  backlight.off()
   lcd.clear()
+  screen_on = False
 
 #
-#
+# Display Kubernetes nodes, pods and deployment counts
 #
 def showKubeCounts():
+  # Get all nodes and count those in 'Ready' condition
   nodes = v1.list_node(watch=False)
   nodes_ready = 0
   nodes_total = len(nodes.items)
@@ -68,6 +85,7 @@ def showKubeCounts():
   lcd.set_cursor_position(14, 0)
   lcd.write(str(nodes_ready).ljust(2))
 
+  # Get all pods and count those in 'Running' phase
   pods = v1.list_pod_for_all_namespaces(watch=False)
   pods_running = 0
   pods_total = len(pods.items)
@@ -80,6 +98,7 @@ def showKubeCounts():
   lcd.set_cursor_position(14, 1)
   lcd.write(str(pods_running).ljust(2))  
 
+  # Get all deployments and count those in 'Running' phase
   deploys = v1Apps.list_deployment_for_all_namespaces(watch=False)
   deploy_ready = 0
   deploy_total = len(deploys.items)
@@ -93,13 +112,13 @@ def showKubeCounts():
   lcd.write(str(deploy_ready).ljust(2))
 
 #
-#
+# Show per node metrics
 #
 def showNodeMetrics():
   # Get usage metrics from raw API call to /apis/metrics.k8s.io/v1beta1/nodes
   api_client = client.ApiClient()
   raw_resp = api_client.call_api('/apis/metrics.k8s.io/v1beta1/nodes/', 'GET', _preload_content=False)
-  # Crazy conversion required 
+  # Crazy conversion required, dunno why this is so hard
   response_metrics = json.loads(raw_resp[0].data.decode('utf-8'))  
 
   # Call list Nodes
@@ -127,7 +146,7 @@ def showNodeMetrics():
     count = count + 1
 
 #
-#
+# Print node names, call before showNodeMetrics
 #
 def printNodes():
   nodes = v1.list_node()
@@ -140,11 +159,10 @@ def printNodes():
     count = count + 1
 
 #
-#
+# Show deployment details, at deploy_index, ingnoring kube-system
 #
 def showKubeDeploys():
   global deploy_index, deploy_max
-  #print(deploy_index)
   all_deploys = v1Apps.list_deployment_for_all_namespaces()
 
   deploy_max = 0
@@ -191,17 +209,24 @@ def handle_r(pin):
 deploy_index = 0
 deploy_max = 0
 backlight_timer = None
+screen_on = True
 mode = joystick.UP
 
 # Starting mode
-switchMode(joystick.DOWN)
+switchMode(joystick.UP)
 
 # Main loop
 while True:
+  # Don't update if screen is "off"
+  if not screen_on:
+    continue
+
   if mode == joystick.UP:
     showKubeCounts()
   if mode == joystick.LEFT:
     showNodeMetrics()    
   if mode == joystick.DOWN:
-    showKubeDeploys()      
+    showKubeDeploys()   
+
+  # Pause and loop   
   time.sleep(5)
