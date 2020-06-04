@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from kubernetes import client, config, utils
 import dot3k.backlight as backlight
 import dot3k.lcd as lcd
@@ -6,7 +8,7 @@ import time, json, math
 from threading import Timer
 
 #
-#
+# Handles switching mode and any tasks to run before going into new mode
 #
 def switchMode(new_mode):
   global mode, backlight_timer, deploy_index
@@ -17,10 +19,10 @@ def switchMode(new_mode):
 
   mode = new_mode
   
-  # turn off backlight after 10 seconds
+  # Turn off backlight & screen after 10 seconds
   if backlight_timer != None:
     backlight_timer.cancel()
-  backlight_timer = Timer(4.0, backlight.off)
+  backlight_timer = Timer(15, screenOff)
   backlight_timer.start() 
 
   if mode == joystick.UP:
@@ -41,6 +43,13 @@ def switchMode(new_mode):
       deploy_index = 0    
     backlight.hue(0.7)
     showKubeDeploys()   
+
+#
+# Clear display and turn off light
+#
+def screenOff():
+  backlight.off
+  lcd.clear()
 
 #
 #
