@@ -1,0 +1,21 @@
+# helm install grafana grafana/grafana -f grafana-values.yaml
+
+service:
+  type: NodePort
+  nodePort: 32200
+
+grafana.ini:
+  auth.anonymous:
+    enabled: true
+    org_role: Admin
+  auth:
+    disable_login_form: true
+
+# This should bind to the volume created by storage/grafana-vol.yaml
+persistence:
+  type: statefulset
+  size: 200Mi
+  enabled: true
+  storageClassName: nfs
+  selectorLabels: 
+    directory: grafana

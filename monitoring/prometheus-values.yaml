@@ -1,0 +1,21 @@
+# helm install prometheus prometheus-community/prometheus -f prometheus-values.yaml
+
+fullnameOverride: prometheus
+
+server:
+  persistentVolume: 
+    enabled: false
+  service:
+    type: NodePort
+
+alertmanager:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+
+pushgateway:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false

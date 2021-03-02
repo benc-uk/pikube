@@ -9,8 +9,9 @@ except:
   exit()
 
 from kubernetes import client, config, utils
-import time, json, math
+import time, json, math, signal, sys
 from threading import Timer
+
 
 #
 # Handles switching mode and any tasks to run before going into new mode
@@ -18,7 +19,7 @@ from threading import Timer
 def switchMode(new_mode):
   global mode, backlight_timer, deploy_index
   lcd.clear()
-  
+
   # Reset deploy_index if mode changes
   if new_mode != mode:
     deploy_index = -1
@@ -179,10 +180,17 @@ def showKubeDeploys():
   lcd.set_cursor_position(0, 2)
   lcd.write(f"replicas: {deploys[deploy_index].status.replicas}/{deploys[deploy_index].status.ready_replicas}")  
 
+def cleanUp(sig, frame):
+  backlight.off()
+  lcd.clear()
+  print("Exiting kubernetes status server")
+  sys.exit(0)
+
 ########################
 # Entry point here
 ########################
 
+print("Kubernetes status server starting")
 config.load_kube_config()
 v1 = client.CoreV1Api()
 v1Apps = client.AppsV1Api()
@@ -190,6 +198,8 @@ v1Apps = client.AppsV1Api()
 backlight.off()
 lcd.clear()
 lcd.set_contrast(45)
+
+signal.signal(signal.SIGINT, cleanUp)
 
 # Switch modes with joystick
 @joystick.on(joystick.UP)
@@ -213,7 +223,7 @@ screen_on = True
 mode = joystick.UP
 
 # Starting mode
-switchMode(joystick.UP)
+switchMode(joystick.DOWN)
 
 # Main loop
 while True:

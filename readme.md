@@ -28,7 +28,7 @@ My notes here all are borrowed/copied/taken from the two guides below. There's n
 https://github.com/teamserverless/k8s-on-raspbian
 
 **How to build your own Raspberry Pi Kubernetes Cluster** 
-https://wiki.learnlinux.tv/index.php/How_to_build_your_own_Raspberry_Pi_Kubernetes_Cluster#.3D.3D_Enable_routing
+https://wiki.learnlinux.tv/index.php/How_to_build_your_own_Raspberry_Pi_Kubernetes_Cluster
 
 
 # 1. Basic OS Setup 
