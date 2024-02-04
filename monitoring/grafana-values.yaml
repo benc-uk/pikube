@@ -1,3 +1,4 @@
+# helm repo add grafana https://grafana.github.io/helm-charts
 # helm install grafana grafana/grafana -f grafana-values.yaml
 
 service:
@@ -17,5 +18,5 @@ persistence:
   size: 200Mi
   enabled: true
   storageClassName: nfs
-  selectorLabels: 
+  selectorLabels:
     directory: grafana

@@ -1,9 +1,10 @@
+# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 # helm install prometheus prometheus-community/prometheus -f prometheus-values.yaml
 
 fullnameOverride: prometheus
 
 server:
-  persistentVolume: 
+  persistentVolume:
     enabled: false
   service:
     type: NodePort

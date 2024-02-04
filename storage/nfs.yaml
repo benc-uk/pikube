@@ -6,17 +6,16 @@ metadata:
     app: storage
 
 ---
-
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: local-pv
+  name: nfs-local-pv
   namespace: storage
 spec:
   capacity:
     storage: 500Gi
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
@@ -24,14 +23,13 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: nfs
-          operator: In
-          values:
-          - enabled
+        - matchExpressions:
+            - key: nfs
+              operator: In
+              values:
+                - enabled
 
 ---
-
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -39,14 +37,13 @@ metadata:
   namespace: storage
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   storageClassName: local-storage
   resources:
     requests:
       storage: 500Gi
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -66,32 +63,32 @@ spec:
         name: nfs-server
     spec:
       containers:
-      - name: nfs-server
-        image: itsthenetwork/nfs-server-alpine:11-arm
-        env:
-          - name: SHARED_DIRECTORY
-            value: /exports
-        ports:
-          - name: nfs
-            containerPort: 2049
-          - name: mountd
-            containerPort: 20048
-          - name: rpcbind
-            containerPort: 111
-        securityContext:
-          privileged: true
-        volumeMounts:
-          - mountPath: /exports
-            name: mypvc
+        - name: nfs-server
+          image: itsthenetwork/nfs-server-alpine:11-arm
+          env:
+            - name: SHARED_DIRECTORY
+              value: /exports
+          ports:
+            - name: nfs
+              containerPort: 2049
+            - name: mountd
+              containerPort: 20048
+            - name: rpcbind
+              containerPort: 111
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /exports
+              name: mypvc
       volumes:
         - name: mypvc
           persistentVolumeClaim:
             claimName: local-claim
+      # Important
       nodeSelector:
         nfs: enabled
 
 ---
-
 kind: Service
 apiVersion: v1
 metadata:

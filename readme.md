@@ -256,12 +256,12 @@ Go to the following URL `http://master:30000/` (assuming your master node hostna
 
 There's practically an endless number of things you can do next with your cluster, however there are a few common next steps to get it to the next level and more functional
 
-- Deploy metrics server using `kubectl apply -f samples/metrics-server.yaml`
+- Deploy metrics server by running: `kubectl apply -f samples/metrics-server.yaml`
 - Add an gateway controller - *Coming soon! This has totally changed since I last used Kubernetes!*
 - [Deploy Kubernetes dashboard](./dashboard.md)
-- Enable NFS based storage for persistent volumes - *Coming soon!*
-- Support load balancing services with MetalLB - *Coming soon!*
-- Enable Prometheus and Grafana - *Coming soon!*
+- [Enable NFS based storage for persistent volumes](./storage/)
+- Support load balancing with MetalLB - *Coming soon!*
+- [Enable Prometheus and Grafana](./monitoring/)
 - If you have a [Display-o-tron 3000](https://shop.pimoroni.com/products/display-o-tron-hat) I have created [a Python script to display all sorts of details about your cluster](./status-dot3k/)
 
 ---

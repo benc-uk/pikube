@@ -1,8 +1,12 @@
+#
+# Example of a PersistentVolume for Grafana that uses the NFS server
+# You must edit this before deploying, see the comments below
+#
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: grafana-nfs-volume
-  namespace: mon
+  name: grafana-volume
   labels:
     directory: grafana
 spec:
@@ -14,7 +18,8 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nfs
   nfs:
-    path: /grafana
+    # This is the path within the exported NFS volume
+    path: /share01
     # WHY IP?! We can't use the service DNS name as it's resolved from the host not the pods
-    # Change to: kubectl get svc -n storage nfs-server -o jsonpath='{.spec.clusterIP}'
-    server: 10.108.218.202
+    # To get IP run this: kubectl get svc -n storage nfs-server -o jsonpath='{.spec.clusterIP}'
+    server: 10.104.245.46
