@@ -122,13 +122,15 @@ mkdir -p /etc/containerd
 containerd config default | tee /etc/containerd/config.toml
 ```
 
-**⚠ IMPORTANT**: Set cgroup driver for runc to use systemd. See [note](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd). You can also edit /etc/containerd/config.toml manually to make this change. If you miss this step, Bad Things(TM) happen later and you won't get any helpful error messages
+**⚠ IMPORTANT**: Set cgroup driver for runc to use systemd. See [note](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd). If you forget this step, Bad Things(TM) happen later and you won't get any helpful error messages to explain why.
 
 ```bash
 sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
 ```
 
-Now start containerd
+You can also edit /etc/containerd/config.toml manually to make this change if sed is to hacky for your tastes.
+
+Now enable & start containerd
 
 ```
 systemctl restart containerd
@@ -146,7 +148,7 @@ echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBE_VER/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 ```
 
-Install kubelet, kubeadm and kubectl they are kinda important
+Install kubelet, kubeadm and kubectl, they are kinda important!
 
 ```bash
 apt update
@@ -210,9 +212,9 @@ Validate and check the CoreDNS & kube-flannel pods start up
 kubectl get po -A
 ```
 
-If everything is running you have a working Kubernetes master and control plane!
+If everything is running you have a working Kubernetes master and control plane! 
 
-**Optional but HIGHLY recommended**: You really shouldn't need to be SSH'ed into your cluster in order to do anything, so scp the kube config file to outside the master for remote admin from your dev machine or other system
+**Optional but HIGHLY recommended**: You really shouldn't need to be SSH'ed into your cluster in order to do anything, so now is a good time to scp the kube config file to outside the master to allow remote admin (kubectl) from your dev machine or other system
 
 ```bash
 scp master:~/.kube/config ~/pikube.config
@@ -232,13 +234,9 @@ sudo kubeadm join 192.168.0.150:6443 \
 
 If you missed or lost the output after the `kubeadm init` step, then you can SSH onto the master and use the `kubeadm token` command to create a new one.
 
-Validate the nodes joining the cluster with 
+Validate the node(s) joined the cluster successfully by running `kubectl get node`
 
-```sh
-kubectl get node
-```
-
-It also helps to label your nodes as workers, e.g.
+It also helps to label your node(s) as workers, e.g.
 
 ```bash
 kubectl label node __CHANGE_ME__ node-role.kubernetes.io/worker=worker
