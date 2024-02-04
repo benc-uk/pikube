@@ -2,7 +2,9 @@
 
 _Project PiKube_ is a slightly grandiose title for a guide to building a Kubernetes cluster using a small number of Raspberry Pis. This is a "bare metal" approach and we'll be installing & setting up Kubernetes from scratch, how exciting!
 
-<img src="https://user-images.githubusercontent.com/14982936/83271709-21bd4180-a1c2-11ea-9849-8690fe02106d.png" style="width:450px">
+<img src="assets/pic1.jpg" style="width:450px">
+
+<img src="assets/pic2.png" style="width:450px">
 
 Updated Feb 2024: This guide was (re)written for Raspberry Pi OS Debian 12 aka Bookworm and Kubernetes 1.29
 
