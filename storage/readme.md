@@ -8,7 +8,7 @@ Create a directory on one of the nodes to be exported by the NFS server and as m
 
 SSH into a worker node, e.g. node1 and run
   
-```bash
+```sh
 sudo mkdir -p /nfs-vol/share01
 sudo mkdir -p /nfs-vol/share02
 sudo mkdir -p /nfs-vol/share03

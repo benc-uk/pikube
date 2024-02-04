@@ -6,7 +6,7 @@ You'll need a [Display-o-tron 3000](https://shop.pimoroni.com/products/display-o
 
 Pre Install
 
-```bash
+```sh
 curl https://get.pimoroni.com/displayotron | bash
 ```
 
@@ -14,13 +14,13 @@ This command will fail at the end with an error like "error: externally-managed-
 
 Copy the `status-dot3k` folder from this repo to the master node
 
-```bash
+```sh
 scp -r ./status-dot3k master:~
 ```
 
 SSH into the master node and run the following
 
-```bash
+```sh
 cd ~/status-dot3k
 python -m venv .venv
 source .venv/bin/activate
@@ -30,6 +30,6 @@ chmod +x ./status.py
 
 Run the script (make sure your venv is still activated!)
 
-```bash
+```sh
 ./status.py
 ```

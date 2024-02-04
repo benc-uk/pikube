@@ -10,7 +10,7 @@ See also:
 
 ## 1. Deploy dashboard resources 
 
-```bash
+```sh
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 ```
 
@@ -18,7 +18,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/a
 
 Create a service account called `admin-user` with cluster-admin role
 
-```bash
+```sh
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ServiceAccount
@@ -45,13 +45,13 @@ EOF
 
 ## 3. Get an bearer token for that account
 
-```bash
+```sh
 kubectl -n kubernetes-dashboard create token admin-user
 ```
 
 ## 4. Access the dashboard via the API proxy
 
-```bash
+```sh
 kubectl proxy
 ```
 
