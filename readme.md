@@ -30,7 +30,7 @@ I used one Raspberry Pi as a master node, and two as worker nodes
 
 # 🍔 Installing the OS
 
-Rather than a step by step guide, these steps are very condensed as they do cover anything specific to this project. If this is your first time with a Raspberry Pi you might want to get familiar with using it and setting it up first.
+For this part rather than a step by step guide, these steps are very condensed as they don't really involve anything specific to this project. If this is your first time with a Raspberry Pi you might want to get familiar with using it and setting it up first.
 
 - Download Raspberry Pi OS 64-bit lite (headless) edition: https://downloads.raspberrypi.com/raspios_lite_arm64/images/
 - Image all SD cards with the official imaging tool https://www.raspberrypi.com/software/
