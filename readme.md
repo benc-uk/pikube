@@ -12,7 +12,7 @@ Updated Feb 2024: This guide was (re)written for Raspberry Pi OS Debian 12 aka B
 
 ## Hardware
 
-I am not going to provide a fixed bill of materials for what you need, but at a minimum have at least two spare Raspberry Pi in order to make this worthwhile. For reference this is what I used:
+I am not going to provide a full bill of materials for what you need, but at a minimum have at least two spare Raspberry Pi in order to make this worthwhile. For reference this is what I used:
 
 - 3 x Raspberry Pi 4
 - 3 x microSDHC cards (I used 32GB, I'm sure 16GB would work too)
@@ -124,7 +124,7 @@ mkdir -p /etc/containerd
 containerd config default | tee /etc/containerd/config.toml
 ```
 
-**⚠ IMPORTANT**: Set cgroup driver for runc to use systemd. See [note](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd). If you forget this step, Bad Things(TM) happen later and you won't get any helpful error messages to explain why.
+**⚠ IMPORTANT**: Set cgroup driver for runc to use systemd. See [note](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd). If you forget this step, Bad Things(TM) happen later and you won't get any helpful error messages to explain why, just a headache.
 
 ```sh
 sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
@@ -252,25 +252,27 @@ OK you should now have a basic but functional Kubernetes cluster, deploy a test 
 
 Then run `kubectl get pods -o wide` and check the pods are running and they are assigned to your worker nodes
 
-Go to the following URL `http://master:30000/` (assuming your master node hostname is `master`) to open the app
+Go to the following URL `http://master:30000/` (if your master node hostname is not `master` then change it) to open the app.  
+
+If it loads then congratulations you've built a Kubernetes cluster from nothing and deployed an application to it. Go you! celebrate with a coffee/tea/beer/soda/absinthe you've earned it. 🥳
 
 # 🐾 Next Steps
 
-There's practically an endless number of things you can do next with your cluster, however there are a few common next steps to get it to the next level and more functional
+There's practically an endless number of things you can do next with your cluster, however there are a few common next steps to get it to the next level and more functional. A few of these will require you to have a git clone of this repo, or you can just download the zip if you don't have git.
 
 - Deploy metrics server by running: `kubectl apply -f samples/metrics-server.yaml`
 - Add an gateway controller - *Coming soon! This has totally changed since I last used Kubernetes!*
 - [Deploy Kubernetes dashboard](./dashboard.md)
 - [Enable NFS based storage for persistent volumes](./storage/)
 - Support load balancing with MetalLB - *Coming soon!*
-- [Enable Prometheus and Grafana](./monitoring/)
+- [Deploy & use Prometheus and Grafana](./monitoring.md)
 - If you have a [Display-o-tron 3000](https://shop.pimoroni.com/products/display-o-tron-hat) I have created [a Python script to display all sorts of details about your cluster](./status-dot3k/)
 
 ---
 
 ## Appendix 1 - Static IP on Raspberry Pi OS Bookworm
 
-There's a lot of outdated information on setting static IP on the Raspberry Pi, and as of version 'Bookworm' (Oct 2023) the method has changed drastically, and now uses network manager and NOT dhcpcd
+There's a lot of outdated information on setting static IP on the Raspberry Pi, and as of version 'Bookworm' (Oct 2023) the method has changed drastically, and now uses network manager and NOT dhcpcd. Finding this out cost me *hours*, so I've called this step out with a little detail so you don't fall into the same trap.
 
 You'll need to find the name of the network config for the network interface you are using (either eth0 or wlan0)
 

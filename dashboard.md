@@ -1,8 +1,8 @@
 # Deploy the Kubernetes Dashboard
 
-Deploy the official Kubernetes Dashboard, which is terrible and no-one ever uses it
+Deploy the official Kubernetes Dashboard, which is actually pretty terrible and I really don't think anyone uses it.
 
-It's recommended to deploy the metrics server too `kubectl apply -f samples/metrics-server.yaml`
+It's recommended to deploy the metrics server too `kubectl apply -f samples/metrics-server.yaml` otherwise parts of the dashboard won't show anything
 
 See also:
 - https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/
@@ -16,7 +16,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/a
 
 ## 2. Create account
 
-Create a service account called `admin-user` with cluster-admin role
+Create a service account called `admin-user` with cluster-admin role (beware this means it has total control of the cluster)
 
 ```sh
 kubectl apply -f - <<EOF
@@ -49,12 +49,14 @@ EOF
 kubectl -n kubernetes-dashboard create token admin-user
 ```
 
-## 4. Access the dashboard via the API proxy
+## 4. Access the dashboard via the kubectl proxy
 
 ```sh
 kubectl proxy
 ```
 
-Go to this URL and use the token you created to login
+Then go to this URL, and use the token you created to login
 
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login
+
+Note. There are other ways to expose and access the dashboard, but I can't be bothered to cover them.

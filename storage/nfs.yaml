@@ -19,7 +19,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /nfs-vol
+    path: /nfs
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -33,7 +33,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: local-claim
+  name: nfs-local-pvc
   namespace: storage
 spec:
   accessModes:
@@ -79,11 +79,11 @@ spec:
             privileged: true
           volumeMounts:
             - mountPath: /exports
-              name: mypvc
+              name: nfs-pvc
       volumes:
-        - name: mypvc
+        - name: nfs-pvc
           persistentVolumeClaim:
-            claimName: local-claim
+            claimName: nfs-local-pvc
       # Important
       nodeSelector:
         nfs: enabled
