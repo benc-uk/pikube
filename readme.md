@@ -26,7 +26,9 @@ I used 1 device as a master node, and 2 as worker nodes
 - A decent terminal/shell
 - kubectl (optional but recommended)
 
-# Installing the OS:
+# Installing the OS
+
+Rather than a step by step guide, these steps are very condensed as they do cover anything specific to this project. If this is your first time with a Raspberry Pi you might want to get familiar with using it and setting it up first.
 
 - Download Raspberry Pi OS 64-bit lite (headless) edition: https://downloads.raspberrypi.com/raspios_lite_arm64/images/
 - Image all SD cards with the official imaging tool https://www.raspberrypi.com/software/
@@ -34,13 +36,13 @@ I used 1 device as a master node, and 2 as worker nodes
   - Pick names for your nodes, I went for `master` `node1` and `node2`
 - Get all nodes booted and on the network
 
+⚠ IMPORTANT: It's **highly** recommended to set static IPs for all nodes, [see the appendix](#appendix-1---static-ip-on-raspberry-pi-os-bookworm)
+
 Other notes:
 
-- Simply joining the Pis to your home wifi network works very well. There is no need to use ethernet, or set up a dedicated network or hub for the cluster, of course you can if you wish, this is an exercise left to the reader
-- We will do the install of Kubernetes using SSH, so ensure you can SSH into the nodes from your machine either with a password or ssh-keys.
-- You should not need a keyboard or screen connected to the Pis if you enabled SSH and have them on your network (i.e. configured with wifi)
-
-⚠ IMPORTANT: It's **highly** recommended to set static IPs for all nodes, see the appendix
+- Simply joining the Pis to your home WiFi network works very well. Surprisingly there is no need to use ethernet, or set up a dedicated network or hub for the cluster, of course you can if you wish, this is an exercise left to the reader
+- We will do the install of Kubernetes using SSH, so ensure you can SSH into the nodes from your machine either with a password or SSH keys (I would strongly advise SSH keys!)
+- You should not need a keyboard or screen connected to the Pis if you enabled SSH and have them on your network (i.e. configured with WiFi) unless something has gone wrong!
 
 # Base Configuration & Setup (all nodes)
 
@@ -268,18 +270,23 @@ There's practically an endless number of things you can do next with your cluste
 
 ## Appendix 1 - Static IP on Raspberry Pi OS Bookworm
 
-To set a static IP you'll need to find the name of the config for interface you are using.
+There's a lot of outdated information on setting static IP on the Raspberry Pi, and as of version 'Bookworm' (Oct 2023) the method has changed drastically, and now uses network manager and NOT dhcpcd
+
+You'll need to find the name of the network config for the network interface you are using (either eth0 or wlan0)
 
 ```bash
 sudo nmcli c show
 ```
 
-When using WiFi which was enabled with the OS customisation when imaging the SD card, the name will be called 'preconfigured', change the IP addresses below to what you need
+To set the connection to be static, the following commands can be used.  
+Obviously modify the `__CHANGE_ME__` to the connection name, and IP addresses below to what you need, and don't just copy, paste & run!
 
 ```bash
-sudo nmcli c mod 'preconfigured' ipv4.addresses 192.168.0.152/24 ipv4.method manual
-sudo nmcli c mod 'preconfigured' ipv4.gateway 192.168.0.1
-sudo nmcli c mod 'preconfigured' ipv4.dns 192.168.0.1
+sudo nmcli c mod '__CHANGE_ME__' ipv4.addresses 192.168.0.150/24 ipv4.method manual
+sudo nmcli c mod '__CHANGE_ME__' ipv4.gateway 192.168.0.1
+sudo nmcli c mod '__CHANGE_ME__' ipv4.dns 192.168.0.1
 ```
 
-Then reboot
+In my case my three nodes were 192.168.0.150 ~ 152 and my router & DNS server was on 192.168.0.1
+
+Assuming you are making these changes via SSH, it's simplest to reboot to the IP address change take effect.
