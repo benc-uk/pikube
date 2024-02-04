@@ -15,21 +15,20 @@ spec:
         app: mainframe
     spec:
       containers:
-      - name: mainframe
-        image: bencuk/hercules-mvs:latest
-        ports:
-        - containerPort: 8038
-        - containerPort: 3270
-        resources:
-          limits:
-            cpu: 500m
-            memory: 300M
-          requests:
-            cpu: 100m
-            memory: 100M
+        - name: mainframe
+          image: bencuk/hercules-mvs:latest
+          ports:
+            - containerPort: 8038
+            - containerPort: 3270
+          resources:
+            limits:
+              cpu: 500m
+              memory: 300M
+            requests:
+              cpu: 100m
+              memory: 100M
 
 ---
-
 kind: Service
 apiVersion: v1
 metadata:
@@ -45,7 +44,6 @@ spec:
       nodePort: 31270
 
 ---
-
 kind: Service
 apiVersion: v1
 metadata:

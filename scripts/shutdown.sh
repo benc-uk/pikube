@@ -1,5 +1,5 @@
 #!/bin/bash
 
-ssh pi@master sudo shutdown now
-ssh pi@node-1 sudo shutdown now
-ssh pi@node-2 sudo shutdown now
+ssh master sudo shutdown now
+ssh node1 sudo shutdown now
+ssh node2 sudo shutdown now

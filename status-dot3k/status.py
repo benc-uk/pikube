@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
+# Check if we are running in a virtual environment
+import sys
+if sys.prefix == '/usr':
+  print("!ERROR! Please run in a virtual environment, exiting now!")
+  exit()
+
 try:
   import dot3k.backlight as backlight
   import dot3k.lcd as lcd
   import dot3k.joystick as joystick
-except:
+except ImportError as e:
   print("!ERROR! Unable to detect Display-o-tron 3000, exiting now!")
   exit()
 

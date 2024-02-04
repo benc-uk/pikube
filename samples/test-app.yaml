@@ -15,20 +15,19 @@ spec:
         app: nodeapp
     spec:
       containers:
-      - name: app
-        image: bencuk/nodejs-demoapp:arm
-        ports:
-        - containerPort: 3000
-        resources:
-          limits:
-            cpu: 500m
-            memory: 50M
-          requests:
-            cpu: 100m
-            memory: 20M
+        - name: app
+          image: bencuk/nodejs-demoapp:arm
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: 500m
+              memory: 50M
+            requests:
+              cpu: 100m
+              memory: 20M
 
 ---
-
 kind: Service
 apiVersion: v1
 metadata:
@@ -41,10 +40,9 @@ spec:
     - protocol: TCP
       port: 3000
       targetPort: 3000
-      nodePort: 30001
+      nodePort: 30000
 
 ---
-
 # kind: Ingress
 # apiVersion: networking.k8s.io/v1beta1
 # metadata:

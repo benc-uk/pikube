@@ -1,0 +1,5 @@
+dot3k
+kubernetes
+smbus
+# Version 2 is broke as hell
+sn3218==1.2.7

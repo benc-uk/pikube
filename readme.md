@@ -1,203 +1,285 @@
 # Project PiKube
-A slightly grand title for a very quick "brain dump" style guide on building a small set of Raspberry Pis and installing a Kubernetes cluster on them
+
+_Project PiKube_ is a slightly grandiose title for a guide to building a Kubernetes cluster using a small number of Raspberry Pis. This is a "bare metal" approach and we'll be installing & setting up Kubernetes from scratch, how exciting!
 
 <img src="https://user-images.githubusercontent.com/14982936/83271709-21bd4180-a1c2-11ea-9849-8690fe02106d.png" style="width:450px">
 
-# Prereqs
-## Software
-- https://www.balena.io/etcher/
-- SSH client
-- Decent terminal/shell
-- kubectl (optional but reccomended)
-  
+Updated Feb 2024: This guide was (re)written for Raspberry Pi OS Debian 12 aka Bookworm and Kubernetes 1.29
+
+# Pre-reqs
 
 ## Hardware
-This is what I used
+
+There is not a fixed list of what you need but at a minimum at least two Raspberry Pi in order to make this worthwhile, this is what I used
+
 - 3 x Raspberry Pi 4
 - 3 x microSDHC cards (I used 32GB, I'm sure 16GB would work too)
 - 3 x [Short 30cm USB C cables](https://www.amazon.co.uk/gp/product/B07W12JK3J/)
 - 1 x [Multi port USB Power block](https://www.amazon.co.uk/gp/product/B00VTI8K9K)
 - 2 x [Cluster case / rack](https://thepihut.com/products/cluster-case-for-raspberry-pi)
 
-I used 1 RPi as a master node, and 2 as worker nodes
+I used 1 device as a master node, and 2 as worker nodes
 
-# Source Guides
-My notes here all are borrowed/copied/taken from the two guides below. There's nothing new unique on this page which isn't covered by these guides
+## Software
 
-**Kubernetes on Raspbian (Raspberry Pi)**   
-https://github.com/teamserverless/k8s-on-raspbian
+- SSH client
+- A decent terminal/shell
+- kubectl (optional but recommended)
 
-**How to build your own Raspberry Pi Kubernetes Cluster** 
-https://wiki.learnlinux.tv/index.php/How_to_build_your_own_Raspberry_Pi_Kubernetes_Cluster
+# Installing the OS:
 
+- Download Raspberry Pi OS 64-bit lite (headless) edition: https://downloads.raspberrypi.com/raspios_lite_arm64/images/
+- Image all SD cards with the official imaging tool https://www.raspberrypi.com/software/
+  - During the imaging process pick the option to customise the OS; enable WiFi, set hostnames, enable SSH with your own SSH pub-key
+  - Pick names for your nodes, I went for `master` `node1` and `node2`
+- Get all nodes booted and on the network
 
-# 1. Basic OS Setup 
+Other notes:
 
-- Flash each SD with 'Raspbian Buster Lite'  
-https://www.raspberrypi.org/downloads/raspbian/
+- Simply joining the Pis to your home wifi network works very well. There is no need to use ethernet, or set up a dedicated network or hub for the cluster, of course you can if you wish, this is an exercise left to the reader
+- We will do the install of Kubernetes using SSH, so ensure you can SSH into the nodes from your machine either with a password or ssh-keys.
+- You should not need a keyboard or screen connected to the Pis if you enabled SSH and have them on your network (i.e. configured with wifi)
 
-- Enable SSH  
-Touch empty `ssh` file in boot partition
+⚠ IMPORTANT: It's **highly** recommended to set static IPs for all nodes, see the appendix
 
-- Enable WiFi  
-https://www.raspberrypi.org/documentation/configuration/wireless/headless.md
+# Base Configuration & Setup (all nodes)
 
-- SSH onto each 
-  - Get IP of each from your router status / connected devices
-  - `ssh pi@{ip_address}` (default password: `raspberry`) 
-  - *Optional*: `ssh-copy-id pi@foo` to copy SSH keys
-  - *Optional*: `sudo passwd pi` to change password
+Nearly every command we will be running will require root access, rather than place sudo literally everywhere, you should switch to root user with `sudo su -` for all of the setup, install and initial configuration
 
-- Assign hostnames and **static** IPs
-  - Hostname: `sudo nano /etc/hostname`
-  - edit `sudo nano /etc/dhcpcd.conf` 
-  I used wlan (which probably isn't great but it worked)
-    ```
-    interface wlan0
-    static ip_address=192.168.0.XXX/24
-    static routers=192.168.0.1
-    static domain_name_servers=192.168.0.1 8.8.8.8
-    ```
+Update the OS and install common packages
 
-# 2. Base Config
-Setup 
-```bash
-sudo apt update && sudo apt dist-upgrade
-sudo apt install -y git
-sudo sysctl net.bridge.bridge-nf-call-iptables=1
+```sh
+apt update && apt -y full-upgrade
+apt -y install iptables apt-transport-https gnupg2 software-properties-common \
+  apt-transport-https ca-certificates curl vim git
 ```
 
-Disable swap
-```bash
+Disable swap, it's probably not enabled but just in case
+
+```sh
+swapoff -a
 sudo dphys-swapfile swapoff && \
 sudo dphys-swapfile uninstall && \
 sudo systemctl disable dphys-swapfile
 ```
 
-Edit kernel boot command `/boot/cmdline.txt`  
-Add the following to the end
+Enable iptables as kube-proxy uses it
+
 ```bash
-cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory
+update-alternatives --set iptables /usr/sbin/iptables-legacy
+update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 ```
 
-**⚠ IMPORTANT** Enable IP forwarding (pod to pod overlay network will not work otherwise)  
-`sudo nano /etc/sysctl.conf`
+Enable some kernel modules which are needed
 
-Uncomment this line
-```bash
-#net.ipv4.ip_forward=1
+```sh
+tee /etc/modules-load.d/k8s.conf <<EOF
+overlay
+br_netfilter
+EOF
+
+modprobe overlay
+modprobe br_netfilter
 ```
 
+Edit kernel boot command `/boot/firmware/cmdline.txt` and add the following to the end
 
-# 3. Docker
-Full setup script here https://github.com/benc-uk/tools-install/blob/master/docker-engine.sh 
-
-It boils down to just this:
-```bash
-curl -fsSL https://get.docker.com/ | sh
-sudo groupadd docker || true
-sudo usermod -aG docker $USER
+```text
+cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1
 ```
 
+Configure the IP stack with some sysctl tunables
 
-# 4. Kubernetes
-Install `kubeadm` on **all nodes** 
-```bash
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - 
-echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update -q
-sudo apt-get install -qy kubeadm
+```sh
+tee /etc/sysctl.d/kubernetes.conf <<EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+sysctl --system
 ```
 
-### Build Master Node / Control Plane
-This is it, creating a Kubernetes cluster. The `sudo kubeadm init` command might take a few minutes
-```bash
-sudo kubeadm config images pull -v3
-sudo kubeadm init --token-ttl=0 --pod-network-cidr=10.244.0.0/16
-```
-**⚠ IMPORTANT** Make a note of the join details, this will be shown once the init process is complete
+**⚠ IMPORTANT**: Now reboot the system
 
-Get config for kubectl
+## Install Container Runtime (all nodes)
+
+We will install & use containerd. These steps should also be run as root.
+
+```sh
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/debian.gpg
+add-apt-repository "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+apt update
+apt install -y containerd.io
+```
+
+Create default containerd configuration
+
+```bash
+mkdir -p /etc/containerd
+containerd config default | tee /etc/containerd/config.toml
+```
+
+**⚠ IMPORTANT**: Set cgroup driver for runc to use systemd. See [note](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd). You can also edit /etc/containerd/config.toml manually to make this change. If you miss this step, Bad Things(TM) happen later and you won't get any helpful error messages
+
+```bash
+sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
+```
+
+Now start containerd
+
+```
+systemctl restart containerd
+systemctl enable containerd
+```
+
+## Install core Kubernetes (all nodes)
+
+Add the Kubernetes package repositories. Note these are the [new k8s.io community repos](https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/).
+
+```bash
+KUBE_VER="v1.29"
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBE_VER/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBE_VER/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+```
+
+Install kubelet, kubeadm and kubectl they are kinda important
+
+```bash
+apt update
+apt install -y kubelet kubeadm kubectl
+```
+
+Verify if you're feeling paranoid
+
+```bash
+kubectl version --client
+kubeadm version
+```
+
+# Install Control Plane (master only)
+
+Ok now we're ready to actually start getting Kubernetes set up, first enable the kubelet service on the master node
+
+```bash
+systemctl enable kubelet
+```
+
+Pull the images need by Kubernetes
+
+```bash
+kubeadm config images pull
+```
+
+Now you are ready to initialize the control plane. I highly suggest running a single master node so you don't need to worry about some of the many (many!) advanced options when running `kubeadm init`.  
+Note `10.244.0.0/16` is the pod CIDR that Flannel likes to use by default (see below)
+
+```bash
+kubeadm init --pod-network-cidr=10.244.0.0/16
+```
+
+**⚠ IMPORTANT** Make a note of the join details that are output, this will be shown once the init process is complete
+
+Still as the root user you can use `kubectl` to validate everything is started up. Note the CoreDNS pods will not start until after the next step, so don't worry about them.
+
+```bash
+export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl get pods -A
+```
+
+Now you can stop running as root, switch to a regular user (but still on the master node) and run the following to configure kubectl for that user
+
 ```bash
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
-*Optional but recommended*: scp the .kube/config file to outside the master for remote admin from your dev machine or other system
 
-Validate 
+Install a pod overlay network add-on, we'll use Flannel as it's simple and does the job, but [many other options are available](https://kubernetes.io/docs/concepts/cluster-administration/addons/)
+
 ```bash
-kubectl get version
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 ```
 
-### Worker Nodes
+Validate and check the CoreDNS & kube-flannel pods start up
 
-On each node, join them to cluster with `kubeadm` and the token/hash details from the master init step
-```
-kubeadm join {IP_ADDRESS}:6443 --token {TOKEN}--discovery-token-ca-cert-hash {CA_HASH}
-```
-
-Validate 
 ```bash
-kubectl get nodes
+kubectl get po -A
 ```
 
-### Network 
+If everything is running you have a working Kubernetes master and control plane!
 
-Install Flannel overlay network.  
-[Many other options are available](https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy)
+**Optional but HIGHLY recommended**: You really shouldn't need to be SSH'ed into your cluster in order to do anything, so scp the kube config file to outside the master for remote admin from your dev machine or other system
+
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+scp master:~/.kube/config ~/pikube.config
+export KUBECONFIG=~/pikube.config
+kubectl get pods -A
 ```
 
-Validate and check the coredns pods start up
+## Join Worker Nodes (workers only)
+
+Adding additional worker nodes to the cluster is very easy, and when you finished running the `kubeadm init` on the master you would have been given a command to join other nodes, below is just an example
+
 ```bash
-kubectl get po -n kube-system -l k8s-app=kube-dns
+sudo kubeadm join 192.168.0.150:6443 \
+  --token __CHANGE_ME__ \
+  --discovery-token-ca-cert-hash __CHANGE_ME__
 ```
 
-### Test with Demo App
-Deploy a test Node.js web app, this will create a NodePort service on port 30001
+If you missed or lost the output after the `kubeadm init` step, then you can SSH onto the master and use the `kubeadm token` command to create a new one.
+
+Validate the nodes joining the cluster with 
+
+```sh
+kubectl get node
+```
+
+It also helps to label your nodes as workers, e.g.
+
 ```bash
-kubectl apply -f demos/testapp.yaml
+kubectl label node __CHANGE_ME__ node-role.kubernetes.io/worker=worker
 ```
 
-Check you see the three pods start, go to `http://{IP_OF_A_NODE}:30001`  
-Optionally validate you can ping from pod to pod by exec'ing into them, especially check pod-to-pod across nodes.
+You can repeat this step for each of your worker nodes
 
+# Conclusion
 
-# 5. Optional Cluster Add-Ons
+OK you should now have a basic but functional Kubernetes cluster, deploy a test web application by running `kubectl apply -f ./samples/test-app.yaml` to verify everything is working.  
 
-### Deploy NGINX Ingress Controller
+Then run `kubectl get pods -o wide` and check the pods are running and they are assigned to your worker nodes
+
+Go to the following URL `http://master:30000/` (assuming your master node hostname is `master`) to open the app
+
+## Next Steps
+
+There's practically an endless number of things you can do next with your cluster, however there are a few common next steps to get it to the next level and more functional
+
+- Deploy metrics server using `kubectl apply -f samples/metrics-server.yaml`
+- Add an gateway controller - *Coming soon! This has totally changed since I last used Kubernetes!*
+- [Deploy Kubernetes dashboard](./dashboard.md)
+- Enable NFS based storage for persistent volumes - *Coming soon!*
+- Support load balancing services with MetalLB - *Coming soon!*
+- Enable Prometheus and Grafana - *Coming soon!*
+- If you have a [Display-o-tron 3000](https://shop.pimoroni.com/products/display-o-tron-hat) I have created [a Python script to display all sorts of details about your cluster](./status-dot3k/)
+
+---
+
+## Appendix 1 - Static IP on Raspberry Pi OS Bookworm
+
+To set a static IP you'll need to find the name of the config for interface you are using.
+
 ```bash
-./ingress/deploy.sh
+sudo nmcli c show
 ```
-This uses a NodePort service on port 30000 and installs using Helm 3 into kube-system namespace
 
-### Deploy & Access Dashboard
+When using WiFi which was enabled with the OS customisation when imaging the SD card, the name will be called 'preconfigured', change the IP addresses below to what you need
+
 ```bash
-./dashboard/deploy.sh
-kubectl apply -f ./dashboard/account.yaml
-./dashboard/get-token.sh
-```
-Copy the token that is output
-
-Then run
-```bash
-kube proxy
+sudo nmcli c mod 'preconfigured' ipv4.addresses 192.168.0.152/24 ipv4.method manual
+sudo nmcli c mod 'preconfigured' ipv4.gateway 192.168.0.1
+sudo nmcli c mod 'preconfigured' ipv4.dns 192.168.0.1
 ```
 
-Access dashboard here [`http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/`](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/) and login with the token
-
-### Deploy Metric Server
-The default YAML on the [kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server) repo won't work with ARM and the Raspberry Pi
-
-Install the version in this repo instead
-```bash
-kubectl apply -f ./metric-server-arm/metrics-server.yaml
-```
-
-# Todo
-- Use MetalLB for LoadBalancer? https://metallb.universe.tf/
-- DNS?
-- Certmanager?
-- Run blockchain (joke)
+Then reboot
