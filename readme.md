@@ -261,7 +261,7 @@ If it loads then congratulations you've built a Kubernetes cluster from nothing 
 There's practically an endless number of things you can do next with your cluster, however there are a few common next steps to get it to the next level and more functional. A few of these will require you to have a git clone of this repo, or you can just download the zip if you don't have git.
 
 - Deploy metrics server by running: `kubectl apply -f samples/metrics-server.yaml`
-- Add an gateway controller - *Coming soon! This has totally changed since I last used Kubernetes!*
+- [Add an Ingress Controller](./ingress.md)
 - [Deploy Kubernetes dashboard](./dashboard.md)
 - [Enable NFS based storage for persistent volumes](./storage/)
 - Support load balancing with MetalLB - *Coming soon!*

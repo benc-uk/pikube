@@ -22,6 +22,7 @@ spec:
       containers:
         - name: app
           image: ghcr.io/benc-uk/nodejs-demoapp:latest-arm
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
 
@@ -41,17 +42,20 @@ spec:
       nodePort: 30000
 
 ---
-# kind: Ingress
-# apiVersion: networking.k8s.io/v1beta1
-# metadata:
-#   name: nodeapp
-#   # annotations:
-#   #   nginx.ingress.kubernetes.io/rewrite-target: /
-# spec:
-#   rules:
-#   - http:
-#       paths:
-#       - path: /
-#         backend:
-#           serviceName: nodeapp
-#           servicePort: 80
+# Even if you don't have an Ingress controller, this won't cause an error
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nodeapp
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nodeapp
+                port:
+                  number: 3000
