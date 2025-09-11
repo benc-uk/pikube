@@ -1,12 +1,15 @@
 # Project PiKube
 
-_Project PiKube_ is a slightly grandiose title for my personal guide to building your own Kubernetes cluster, using a small number of Raspberry Pis. This is a "bare metal" approach and we'll be installing & setting up Kubernetes from scratch, how exciting! 
+_Project PiKube_ is a slightly grandiose title for my personal guide to building your own Kubernetes cluster, using a small number of Raspberry Pis. This is a "bare metal" approach and we'll be installing & setting up Kubernetes from scratch, how exciting!
 
-If you've never used Kubernetes before, this will probably not be a good starting point, I suggest getting some familiarity before you begin (try kind, k3s or minikube). You will also need to be reasonably Linux/Unix savvy 
+If you've never used Kubernetes before, this will probably (almost definiely) not be a good starting point, I suggest getting some familiarity before you begin (try kind, k3s or minikube). You will also need to be reasonably Linux/Unix savvy, at the very least be prepared to run commands with little explanation or hand-holding 😄
 
 <img src="assets/pic1.jpg" style="width:400px"> <img src="assets/pic2.png" style="width:400px">
 
-Updated Feb 2024: This guide was (re)written for Raspberry Pi OS Debian 12 aka Bookworm, and Kubernetes 1.29
+Mini Change Log:
+
+- Updated Sept 2025: This guide was validated & updated for 2025 and Kubernetes 1.34
+- Updated Feb 2024: This guide was (re)written for Raspberry Pi OS Debian 12 aka Bookworm, and Kubernetes 1.29
 
 # 🚩 Pre-reqs
 
@@ -32,8 +35,8 @@ I used one Raspberry Pi as a master node, and two as worker nodes
 
 For this part rather than a step by step guide, these steps are very condensed as they don't really involve anything specific to this project. If this is your first time with a Raspberry Pi you might want to get familiar with using it and setting it up first.
 
-- Download Raspberry Pi OS 64-bit lite (headless) edition: https://downloads.raspberrypi.com/raspios_lite_arm64/images/
 - Image all SD cards with the official imaging tool https://www.raspberrypi.com/software/
+  - Pick 'Raspberry Pi OS Lite (64-bit)', you'll find it in the list of "other" OS options
   - During the imaging process pick the option to customise the OS; enable WiFi, set hostnames, enable SSH with your own SSH pub-key
   - Pick names for your nodes, I went for `master` `node1` and `node2`
 - Get all nodes booted and on the network
@@ -42,7 +45,7 @@ For this part rather than a step by step guide, these steps are very condensed a
 
 Other notes:
 
-- Simply joining the Pis to your home WiFi network works very well. Surprisingly there is no need to use ethernet, or set up a dedicated network or hub for the cluster, of course you can if you wish, this is an exercise left to the reader
+- Simply joining the Pis to your home WiFi network works surprisingly well. There is no need to use ethernet, or set up a dedicated network or hub for the cluster, of course you can if you wish, this is an exercise left to the reader
 - We will do the install of Kubernetes using SSH, so ensure you can SSH into the nodes from your machine either with a password or SSH keys (I would strongly advise SSH keys!)
 - You should not need a keyboard or screen connected to the Pis if you enabled SSH and have them on your network (i.e. configured with WiFi) unless something has gone wrong!
 
@@ -143,8 +146,10 @@ systemctl enable containerd
 
 Add the Kubernetes package repositories. Note these are the [new k8s.io community repos](https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/).
 
+> 💥 NOTE: Update the KUBE_VER to the latest version!
+
 ```sh
-KUBE_VER="v1.29"
+KUBE_VER="v1.34"
 
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBE_VER/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
 curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBE_VER/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -155,6 +160,8 @@ Install kubelet, kubeadm and kubectl, they are kinda important!
 ```sh
 apt update
 apt install -y kubelet kubeadm kubectl
+# This is very important to stop them being auto-updated
+apt-mark hold kubelet kubeadm kubectl
 ```
 
 Verify if you're feeling paranoid
@@ -169,7 +176,7 @@ kubeadm version
 Ok now we're ready to actually start getting Kubernetes set up, first enable the kubelet service on the master node
 
 ```sh
-systemctl enable kubelet
+systemctl enable --now kubelet
 ```
 
 Pull the images need by Kubernetes
@@ -214,7 +221,7 @@ Validate and check the CoreDNS & kube-flannel pods start up
 kubectl get po -A
 ```
 
-If everything is running you have a working Kubernetes master and control plane! 
+If everything is running you have a working Kubernetes master and control plane!
 
 **Optional but HIGHLY recommended**: You really shouldn't need to be SSH'ed into your cluster in order to do anything, so now is a good time to scp the kube config file to outside the master to allow remote admin (kubectl) from your dev machine or other system
 
@@ -248,11 +255,11 @@ You can repeat this step for each of your worker nodes
 
 # 💡 Conclusion
 
-OK you should now have a basic but functional Kubernetes cluster, deploy a test web application by running `kubectl apply -f ./samples/test-app.yaml` to verify everything is working.  
+OK you should now have a basic but functional Kubernetes cluster, deploy a test web application by running `kubectl apply -f ./samples/test-app.yaml` to verify everything is working.
 
 Then run `kubectl get pods -o wide` and check the pods are running and they are assigned to your worker nodes
 
-Go to the following URL `http://master:30000/` (if your master node hostname is not `master` then change it) to open the app.  
+Go to the following URL `http://master:30000/` (if your master node hostname is not `master` then change it) to open the app.
 
 If it loads then congratulations you've built a Kubernetes cluster from nothing and deployed an application to it. Go you! celebrate with a coffee/tea/beer/soda/absinthe you've earned it. 🥳
 
@@ -263,8 +270,8 @@ There's practically an endless number of things you can do next with your cluste
 - Deploy metrics server by running: `kubectl apply -f samples/metrics-server.yaml`
 - [Add an Ingress Controller](./ingress.md)
 - [Deploy Kubernetes dashboard](./dashboard.md)
-- [Enable NFS based storage for persistent volumes](./storage/)
-- Support load balancing with MetalLB - *Coming soon!*
+- [Enable NFS based storage for persistent volumes](./storage-nfs/readme.md)
+- Support load balancing with MetalLB - _Coming soon!_
 - [Deploy & use Prometheus and Grafana](./monitoring.md)
 - If you have a [Display-o-tron 3000](https://shop.pimoroni.com/products/display-o-tron-hat) I have created [a Python script to display all sorts of details about your cluster](./status-dot3k/)
 
@@ -272,7 +279,7 @@ There's practically an endless number of things you can do next with your cluste
 
 ## Appendix 1 - Static IP on Raspberry Pi OS Bookworm
 
-There's a lot of outdated information on setting static IP on the Raspberry Pi, and as of version 'Bookworm' (Oct 2023) the method has changed drastically, and now uses network manager and NOT dhcpcd. Finding this out cost me *hours*, so I've called this step out with a little detail so you don't fall into the same trap.
+There's a lot of outdated information on setting static IP on the Raspberry Pi, and as of version 'Bookworm' (Oct 2023) the method has changed drastically, and now uses network manager and NOT dhcpcd. Finding this out cost me _hours_, so I've called this step out with a little detail so you don't fall into the same trap.
 
 You'll need to find the name of the network config for the network interface you are using (either eth0 or wlan0)
 

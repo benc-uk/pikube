@@ -64,7 +64,7 @@ spec:
     spec:
       containers:
         - name: nfs-server
-          image: itsthenetwork/nfs-server-alpine:11-arm
+          image: itsthenetwork/nfs-server-alpine:12-arm
           env:
             - name: SHARED_DIRECTORY
               value: /exports

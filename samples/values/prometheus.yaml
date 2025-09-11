@@ -1,0 +1,18 @@
+server:
+  persistentVolume:
+    enabled: true
+    storageClass: nfs-client
+  service:
+    type: ClusterIP
+
+alertmanager:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: true
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true

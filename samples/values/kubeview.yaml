@@ -1,0 +1,11 @@
+# helm repo add kv2 https://code.benco.io/kubeview/deploy/helm
+# helm repo update
+# helm upgrade kv kv2/kubeview --values samples/kubeview.yaml --namespace kubeview --install --create-namespace
+
+ingress:
+  enabled: false
+nodePort:
+  enabled: true
+  port: 30001
+loadBalancer:
+  enabled: false
