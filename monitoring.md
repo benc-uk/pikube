@@ -19,12 +19,6 @@ _Optional:_ If you are OK with not having persistence for Grafana, simply remove
 helm install grafana grafana/grafana -f ./samples/values/grafana.yaml
 ```
 
-Deploy kube-state-metrics (KSM) so we get more stats and metrics from our cluster
-
-```sh
-helm install state-metrics prometheus-community/kube-state-metrics --set prometheus.monitor.enabled=true --set prometheus.scrapeconfig.enabled=true
-```
-
 Now deploy Prometheus
 
 ```sh
